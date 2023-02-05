@@ -8,6 +8,10 @@ from keras.optimizers import RMSprop
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.normalization.batch_normalization import BatchNormalization
 from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Input
+from keras.applications.vgg16 import VGG16
+from keras import optimizers
+from keras.models import Model
 
 
 # データファイルと画像サイズの指定
@@ -33,35 +37,46 @@ y = np.array(y)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, train_size=0.8, shuffle=True)
 
+# vgg16のインスタンスの生成
+input_tensor = Input(shape=(32, 32, 1))
+vgg16 = VGG16(include_top=False, weights='imagenet', input_tensor=input_tensor)
+
 #モデル構築
-model = Sequential()
-model.add(Conv2D(32, (3, 3), input_shape=in_shape))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
+top_model = Sequential()
+top_model.add(Conv2D(32, (3, 3), input_shape=in_shape))
+top_model.add(BatchNormalization())
+top_model.add(Activation('relu'))
+top_model.add(MaxPooling2D(pool_size=(2, 2)))
+top_model.add(Dropout(0.25))
 
-model.add(Conv2D(64, (3, 3)))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(Conv2D(64, (3, 3)))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
+top_model.add(Conv2D(64, (3, 3)))
+top_model.add(BatchNormalization())
+top_model.add(Activation('relu'))
+top_model.add(Conv2D(64, (3, 3)))
+top_model.add(BatchNormalization())
+top_model.add(Activation('relu'))
+top_model.add(MaxPooling2D(pool_size=(2, 2)))
+top_model.add(Dropout(0.25))
 
-model.add(Flatten())
-model.add(Dense(512))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(Dropout(0.5))
-model.add(Dense(out_size))
-model.add(Activation('softmax'))
+top_model.add(Flatten())
+top_model.add(Dense(512))
+top_model.add(BatchNormalization())
+top_model.add(Activation('relu'))
+top_model.add(Dropout(0.5))
+top_model.add(Dense(out_size))
+top_model.add(Activation('softmax'))
 
-model.compile(
-  loss='categorical_crossentropy',
-  optimizer= RMSprop(),
-  metrics=['accuracy'])
+# モデルの連結
+model = Model(inputs=vgg16.input, outputs=top_model(vgg16.output))
+
+# vgg16の重みの固定
+for layer in model.layers[:19]:
+    layer.trainable = False
+
+model.compile(loss='categorical_crossentropy',
+              optimizer=optimizers.SGD(lr=1e-4, momentum=0.9),
+              metrics=['accuracy'])
+
 
 hist = model.fit(
   x_train, y_train,
