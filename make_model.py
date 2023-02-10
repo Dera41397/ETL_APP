@@ -1,14 +1,13 @@
-﻿import numpy as np
-import cv2, pickle
-import keras
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+﻿from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.optimizers import RMSprop
 from keras.layers.core import Dense, Dropout, Activation, Flatten
 from keras.layers.normalization.batch_normalization import BatchNormalization
 from keras.layers import Conv2D, MaxPooling2D
-
+import numpy as np
+import cv2, pickle
+import keras
+import matplotlib.pyplot as plt
 
 # データファイルと画像サイズの指定
 data_file = "./images\ETL8G.pickle"
@@ -36,23 +35,6 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, train_s
 #モデル構築
 model = Sequential()
 
-'''
-model.add(Conv2D(32, (3, 3), input_shape=in_shape))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-
-model.add(Conv2D(64, (3, 3)))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(Conv2D(64, (3, 3)))
-model.add(BatchNormalization())
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-'''
-
 model.add(Flatten())
 model.add(Dense(512))
 model.add(BatchNormalization())
@@ -68,7 +50,7 @@ model.compile(
 
 hist = model.fit(
   x_train, y_train,
-  batch_size=64, epochs=70,verbose=1,
+  batch_size=64, epochs=50,verbose=1,
   validation_data=(x_test, y_test))
 
 score = model.evaluate(x_test, y_test, verbose=1)
@@ -85,5 +67,3 @@ plt.plot(hist.history['val_loss'])
 plt.title('Loss')
 plt.legend(['train', 'test'], loc = 'upper left')
 plt.show()
-
-model.save('ETL8-model.h5')
